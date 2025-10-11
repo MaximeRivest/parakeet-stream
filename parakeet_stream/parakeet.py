@@ -541,8 +541,16 @@ class Parakeet(RichRepr):
             output = self.model.transcribe([audio], timestamps=timestamps, return_hypotheses=True)
 
         # Extract results from Hypothesis object
+        # When return_hypotheses=True, output is a list of Hypothesis objects
+        # output[0] is the Hypothesis for the first audio in the batch
         hyp = output[0]
-        text = hyp.text if hasattr(hyp, 'text') else str(hyp)
+
+        # Get text from Hypothesis
+        if hasattr(hyp, 'text'):
+            text = hyp.text
+        else:
+            # Fallback if structure is unexpected
+            text = str(hyp)
 
         # Extract confidence if available
         confidence = None

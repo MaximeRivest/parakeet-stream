@@ -11,12 +11,17 @@ import torch
 from tqdm.auto import tqdm
 
 from parakeet_stream.config import TranscriberConfig
+from parakeet_stream.transcript import TranscriptResult
 from parakeet_stream.utils import ContextSize, load_audio, make_divisible_by
 
 
+# Deprecated: kept for backward compatibility
 @dataclass
 class TranscriptionResult:
-    """Result from transcription.
+    """
+    DEPRECATED: Use TranscriptResult from parakeet_stream.transcript instead.
+
+    Legacy result class kept for backward compatibility.
 
     Attributes:
         text: Transcribed text
@@ -200,27 +205,50 @@ class StreamingTranscriber:
         if isinstance(audio, np.ndarray):
             audio = torch.from_numpy(audio)
 
-        # Simple transcription using model's built-in method
-        output = self.model.transcribe([audio], timestamps=timestamps)
+        # Calculate duration before transcription
+        duration = len(audio) / self.sample_rate if self.sample_rate else None
 
-        # Handle different output formats from NeMo
-        # Sometimes it returns a list of strings, sometimes a list of hypothesis objects
-        if isinstance(output[0], str):
-            text = output[0]
-            result = TranscriptionResult(text=text)
-        elif isinstance(output[0], list):
-            # Nested list format
-            text = output[0][0] if output[0] else ""
-            result = TranscriptionResult(text=text)
+        # Suppress NeMo's internal deprecation warnings
+        import logging
+
+        # Mark the deprecated function as already warned in NeMo's decorator tracker
+        try:
+            from nemo.utils.decorators.deprecated import _PRINTED_WARNING
+            _PRINTED_WARNING['_transcribe_output_processing'] = True
+        except (ImportError, KeyError):
+            pass
+
+        # Transcribe using model's built-in method with return_hypotheses=True
+        output = self.model.transcribe([audio], timestamps=timestamps, return_hypotheses=True)
+
+        # Extract results from Hypothesis object
+        hyp = output[0]
+
+        # Get text from Hypothesis
+        if hasattr(hyp, 'text'):
+            text = hyp.text
         else:
-            # Hypothesis object
-            text = output[0].text if hasattr(output[0], 'text') else str(output[0])
-            result = TranscriptionResult(text=text)
+            text = str(hyp)
 
-            if timestamps and hasattr(output[0], 'timestamp'):
-                result.timestamps = output[0].timestamp.get('word', [])
+        # Extract confidence if available
+        confidence = None
+        if hasattr(hyp, 'score'):
+            confidence = float(hyp.score)
+        elif hasattr(hyp, 'confidence'):
+            confidence = float(hyp.confidence)
 
-        return result
+        # Extract timestamps if requested
+        timestamp_list = None
+        if timestamps and hasattr(hyp, 'timestamp'):
+            timestamp_list = hyp.timestamp.get('word', [])
+
+        # Return new rich TranscriptResult
+        return TranscriptResult(
+            text=text,
+            confidence=confidence,
+            duration=duration,
+            timestamps=timestamp_list,
+        )
 
     def stream(
         self,
