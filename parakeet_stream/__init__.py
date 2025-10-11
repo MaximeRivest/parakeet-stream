@@ -23,7 +23,7 @@ Quick Start:
     >>> print(live.transcript.text)
 """
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 # Core transcription
 from parakeet_stream.parakeet import Parakeet, StreamChunk, TranscriptionResult

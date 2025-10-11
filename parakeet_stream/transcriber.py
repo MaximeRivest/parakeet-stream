@@ -224,9 +224,16 @@ class StreamingTranscriber:
         # Extract results from Hypothesis object
         hyp = output[0]
 
+        # Handle case where output might be nested (list of lists)
+        if isinstance(hyp, list) and len(hyp) > 0:
+            hyp = hyp[0]
+
         # Get text from Hypothesis
         if hasattr(hyp, 'text'):
             text = hyp.text
+        elif hasattr(hyp, '__getitem__') and hasattr(hyp[0], 'text'):
+            # Another level of nesting
+            text = hyp[0].text
         else:
             text = str(hyp)
 
