@@ -13,7 +13,7 @@ class TestImports:
         """Test importing the main module"""
         import parakeet_stream
         assert hasattr(parakeet_stream, '__version__')
-        assert parakeet_stream.__version__ == "0.3.0"
+        assert parakeet_stream.__version__ == "0.3.1"
 
     def test_import_core_classes(self):
         """Test importing core classes"""
