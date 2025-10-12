@@ -6,6 +6,7 @@ A modern, REPL-friendly Python API for real-time speech transcription with:
 - 6 quality presets for instant quality/latency tuning
 - Microphone support with device discovery
 - Live transcription with background recording
+- Client-server architecture for remote transcription
 - Fluent, chainable configuration API
 
 Quick Start:
@@ -21,6 +22,18 @@ Quick Start:
     >>> # Speak into microphone...
     >>> live.stop()
     >>> print(live.transcript.text)
+    >>>
+    >>> # Client-server setup
+    >>> # Server:
+    >>> from parakeet_stream import ParakeetServer
+    >>> server = ParakeetServer(host='0.0.0.0', port=8765)
+    >>> server.start()
+    >>>
+    >>> # Client:
+    >>> from parakeet_stream import ParakeetClient
+    >>> client = ParakeetClient('ws://localhost:8765')
+    >>> for segment in client.stream_microphone():
+    ...     print(segment['text'])
 """
 
 __version__ = "0.4.0"
@@ -53,6 +66,17 @@ from parakeet_stream.strategies import (
     ConsensusStrategy,
 )
 
+# Client-Server architecture
+try:
+    from parakeet_stream.server import ParakeetServer
+    from parakeet_stream.client import ParakeetClient, ParakeetConnection
+    _CLIENT_SERVER_AVAILABLE = True
+except ImportError:
+    _CLIENT_SERVER_AVAILABLE = False
+    ParakeetServer = None
+    ParakeetClient = None
+    ParakeetConnection = None
+
 __all__ = [
     # Core API (recommended)
     "Parakeet",
@@ -80,6 +104,11 @@ __all__ = [
     "DefaultStrategy",
     "OverlappingWindowStrategy",
     "ConsensusStrategy",
+
+    # Client-Server
+    "ParakeetServer",
+    "ParakeetClient",
+    "ParakeetConnection",
 
     # Legacy API (TranscriptionResult is deprecated, use TranscriptResult)
     "TranscriptionResult",

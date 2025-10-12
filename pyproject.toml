@@ -40,6 +40,20 @@ dependencies = [
 microphone = [
     "sounddevice>=0.4.6",
 ]
+server = [
+    "websockets>=12.0",
+]
+client = [
+    "websockets>=12.0",
+    "soundfile>=0.12.0",
+    "scipy>=1.10.0",
+]
+all = [
+    "sounddevice>=0.4.6",
+    "websockets>=12.0",
+    "soundfile>=0.12.0",
+    "scipy>=1.10.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
