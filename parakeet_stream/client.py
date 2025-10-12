@@ -195,12 +195,27 @@ class ParakeetClient:
                 "Install with: pip install 'parakeet-stream[microphone]'"
             )
 
-        return asyncio.run(self._stream_microphone_async(
-            duration=duration,
-            chunk_duration=chunk_duration,
-            microphone=microphone,
-            verbose=verbose,
-        ))
+        # Run the async generator and yield results
+        async def _run():
+            async for segment in self._stream_microphone_async(
+                duration=duration,
+                chunk_duration=chunk_duration,
+                microphone=microphone,
+                verbose=verbose,
+            ):
+                yield segment
+
+        # Collect all results from async generator
+        results = []
+        async def _collect():
+            async for segment in _run():
+                results.append(segment)
+
+        asyncio.run(_collect())
+
+        # Yield collected results
+        for result in results:
+            yield result
 
     async def _stream_microphone_async(
         self,
@@ -311,12 +326,27 @@ class ParakeetClient:
             >>> for segment in client.stream_file('audio.wav'):
             ...     print(segment['text'])
         """
-        return asyncio.run(self._stream_file_async(
-            audio_path=audio_path,
-            chunk_duration=chunk_duration,
-            realtime=realtime,
-            verbose=verbose,
-        ))
+        # Run the async generator and yield results
+        async def _run():
+            async for segment in self._stream_file_async(
+                audio_path=audio_path,
+                chunk_duration=chunk_duration,
+                realtime=realtime,
+                verbose=verbose,
+            ):
+                yield segment
+
+        # Collect all results from async generator
+        results = []
+        async def _collect():
+            async for segment in _run():
+                results.append(segment)
+
+        asyncio.run(_collect())
+
+        # Yield collected results
+        for result in results:
+            yield result
 
     async def _stream_file_async(
         self,

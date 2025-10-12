@@ -99,7 +99,7 @@ class ParakeetServer:
         # Active connections
         self.connections: set = set()
 
-    async def handle_client(self, websocket: WebSocketServerProtocol, path: str):
+    async def handle_client(self, websocket: WebSocketServerProtocol):
         """
         Handle a single client connection.
 
