@@ -163,17 +163,24 @@ class Parakeet(RichRepr):
         if self._initialized:
             return
 
+        # Suppress verbose NeMo logging and SyntaxWarnings during model loading
+        import logging
+        import warnings
+
+        # Save current warning filters
+        original_filters = warnings.filters[:]
+
+        # Suppress ALL warnings during import and loading
+        warnings.filterwarnings('ignore')
+
         try:
             import nemo.collections.asr as nemo_asr
             from omegaconf import OmegaConf, open_dict
         except ImportError:
+            warnings.filters[:] = original_filters
             raise ImportError(
                 "NeMo toolkit is required. Install with: pip install nemo_toolkit[asr]"
             )
-
-        # Suppress verbose NeMo logging during model loading
-        import logging
-        import warnings
 
         # Save current log levels
         nemo_logger = logging.getLogger('nemo_logger')
@@ -181,8 +188,7 @@ class Parakeet(RichRepr):
         original_nemo_level = nemo_logger.level
         original_root_level = root_logger.level
 
-        # Suppress warnings and NeMo logs
-        warnings.filterwarnings('ignore')
+        # Suppress NeMo logs
         nemo_logger.setLevel(logging.ERROR)
         root_logger.setLevel(logging.ERROR)
 
@@ -261,7 +267,8 @@ class Parakeet(RichRepr):
             # Restore log levels
             nemo_logger.setLevel(original_nemo_level)
             root_logger.setLevel(original_root_level)
-            warnings.filterwarnings('default')
+            # Restore warning filters
+            warnings.filters[:] = original_filters
 
     def _initialize_model(self):
         """
@@ -741,7 +748,8 @@ class Parakeet(RichRepr):
         microphone: Optional['Microphone'] = None,
         output: Optional[Union[str, Path]] = None,
         chunk_duration: Optional[float] = None,
-        verbose: bool = False
+        verbose: bool = False,
+        strategy: Optional['TranscriptionStrategy'] = None
     ) -> 'LiveTranscriber':
         """
         Start live transcription from microphone.
@@ -754,6 +762,7 @@ class Parakeet(RichRepr):
             output: File path to save transcript (optional)
             chunk_duration: Duration of chunks to process (uses config default if None)
             verbose: Whether to print transcriptions to console (default: False)
+            strategy: Transcription strategy to use (default: None = standard streaming)
 
         Returns:
             LiveTranscriber object (already started)
@@ -774,6 +783,11 @@ class Parakeet(RichRepr):
 
             >>> # Save to file
             >>> live = pk.listen(output="transcript.txt")
+
+            >>> # Use overlapping window strategy
+            >>> from parakeet_stream.strategies import OverlappingWindowStrategy
+            >>> strategy = OverlappingWindowStrategy(chunk_duration=5.0, overlap=2.0)
+            >>> live = pk.listen(strategy=strategy)
 
         Raises:
             RuntimeError: If model is not loaded
@@ -797,7 +811,8 @@ class Parakeet(RichRepr):
             microphone=microphone,
             output=output,
             chunk_duration=chunk_duration,
-            verbose=verbose
+            verbose=verbose,
+            strategy=strategy
         )
         live.start()
         return live

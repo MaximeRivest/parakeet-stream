@@ -23,7 +23,7 @@ Quick Start:
     >>> print(live.transcript.text)
 """
 
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 
 # Core transcription
 from parakeet_stream.parakeet import Parakeet, StreamChunk, TranscriptionResult
@@ -44,6 +44,14 @@ from parakeet_stream.live import LiveTranscriber
 # Legacy API (for backwards compatibility)
 from parakeet_stream.config import TranscriberConfig
 from parakeet_stream.transcriber import StreamingTranscriber
+
+# Transcription strategies
+from parakeet_stream.strategies import (
+    TranscriptionStrategy,
+    DefaultStrategy,
+    OverlappingWindowStrategy,
+    ConsensusStrategy,
+)
 
 __all__ = [
     # Core API (recommended)
@@ -66,6 +74,12 @@ __all__ = [
 
     # Streaming
     "StreamChunk",
+
+    # Transcription strategies
+    "TranscriptionStrategy",
+    "DefaultStrategy",
+    "OverlappingWindowStrategy",
+    "ConsensusStrategy",
 
     # Legacy API (TranscriptionResult is deprecated, use TranscriptResult)
     "TranscriptionResult",

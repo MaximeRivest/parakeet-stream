@@ -35,7 +35,8 @@ class LiveTranscriber(RichRepr):
         microphone: Optional[Microphone] = None,
         output: Optional[Union[str, Path]] = None,
         chunk_duration: float = 2.0,
-        verbose: bool = False
+        verbose: bool = False,
+        strategy: Optional['TranscriptionStrategy'] = None
     ):
         """
         Initialize live transcriber.
@@ -46,12 +47,14 @@ class LiveTranscriber(RichRepr):
             output: Optional file path to save transcript
             chunk_duration: Duration of audio chunks in seconds
             verbose: Whether to print transcriptions to console (default: False)
+            strategy: Transcription strategy (default: None = standard streaming)
         """
         self.transcriber = transcriber
         self.microphone = microphone or Microphone()
         self.output_file = output
         self.chunk_duration = chunk_duration
         self.verbose = verbose
+        self.strategy = strategy
 
         self.transcript = TranscriptBuffer()
         self._running = False
@@ -119,29 +122,53 @@ class LiveTranscriber(RichRepr):
                             audio_data = np.concatenate(buffer).flatten()
                             buffer = []
 
-                            # Transcribe (quiet mode - no progress bars)
+                            # Transcribe using strategy or default method
                             try:
-                                result = self.transcriber.transcribe(audio_data, _quiet=True)
-
-                                if result.text.strip():
-                                    # Calculate timestamps
-                                    elapsed = time.time() - self._start_time
-                                    segment = Segment(
-                                        text=result.text.strip(),
-                                        start_time=elapsed - self.chunk_duration,
-                                        end_time=elapsed,
-                                        confidence=result.confidence
+                                if self.strategy:
+                                    # Use custom strategy
+                                    segments = self.strategy.process_stream(
+                                        audio_data,
+                                        self.transcriber,
+                                        self.microphone.sample_rate
                                     )
-                                    self.transcript.append(segment)
 
-                                    # Print to console if verbose
-                                    if self.verbose:
-                                        print(f"[{format_duration(elapsed)}] {result.text}")
+                                    # Add all segments from strategy
+                                    for segment in segments:
+                                        if segment.text.strip():
+                                            self.transcript.append(segment)
 
-                                    # Write to file if specified
-                                    if self.output_file:
-                                        with open(self.output_file, 'a') as f:
-                                            f.write(f"{result.text}\n")
+                                            # Print to console if verbose
+                                            if self.verbose:
+                                                elapsed = time.time() - self._start_time
+                                                print(f"[{format_duration(elapsed)}] {segment.text}")
+
+                                            # Write to file if specified
+                                            if self.output_file:
+                                                with open(self.output_file, 'a') as f:
+                                                    f.write(f"{segment.text}\n")
+                                else:
+                                    # Use default transcribe method
+                                    result = self.transcriber.transcribe(audio_data, _quiet=True)
+
+                                    if result.text.strip():
+                                        # Calculate timestamps
+                                        elapsed = time.time() - self._start_time
+                                        segment = Segment(
+                                            text=result.text.strip(),
+                                            start_time=elapsed - self.chunk_duration,
+                                            end_time=elapsed,
+                                            confidence=result.confidence
+                                        )
+                                        self.transcript.append(segment)
+
+                                        # Print to console if verbose
+                                        if self.verbose:
+                                            print(f"[{format_duration(elapsed)}] {result.text}")
+
+                                        # Write to file if specified
+                                        if self.output_file:
+                                            with open(self.output_file, 'a') as f:
+                                                f.write(f"{result.text}\n")
 
                             except Exception as e:
                                 if self.verbose:

@@ -57,3 +57,5 @@ audio_files/
 # Distribution
 *.tar.gz
 *.whl
+# Test recordings
+test_recording*.wav
