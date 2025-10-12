@@ -257,8 +257,9 @@ class ParakeetClient:
 
                     elapsed = time.time() - start_time
 
-                # Flush at the end
-                await self.flush()
+                # Send flush message (but don't wait for response - receiver will handle it)
+                flush_msg = {"type": "flush"}
+                await self.websocket.send(json.dumps(flush_msg))
 
             async def receive_and_yield():
                 """Receive segments and yield them."""
@@ -403,8 +404,9 @@ class ParakeetClient:
                         # Simulate real-time by sleeping
                         await asyncio.sleep(chunk_duration)
 
-                # Flush at the end
-                await self.flush()
+                # Send flush message (but don't wait for response - receiver will handle it)
+                flush_msg = {"type": "flush"}
+                await self.websocket.send(json.dumps(flush_msg))
 
             async def receive_and_yield():
                 """Receive segments and yield them."""
