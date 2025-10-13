@@ -48,11 +48,21 @@ client = [
     "soundfile>=0.12.0",
     "scipy>=1.10.0",
 ]
+hotkey = [
+    "websockets>=12.0",
+    "sounddevice>=0.4.6",
+    "pynput>=1.8.0",
+    "panelstatus>=1.0.0",
+    "pyperclip>=1.8.0",
+]
 all = [
     "sounddevice>=0.4.6",
     "websockets>=12.0",
     "soundfile>=0.12.0",
     "scipy>=1.10.0",
+    "pynput>=1.8.0",
+    "panelstatus>=1.0.0",
+    "pyperclip>=1.8.0",
 ]
 dev = [
     "pytest>=7.0.0",
@@ -65,6 +75,10 @@ dev = [
 Homepage = "https://github.com/maximerivest/parakeet-stream"
 Repository = "https://github.com/maximerivest/parakeet-stream"
 Documentation = "https://github.com/maximerivest/parakeet-stream/blob/main/README.md"
+
+[project.scripts]
+parakeet-server = "parakeet_stream.cli_server:main"
+parakeet-client = "parakeet_stream.cli_client:main"
 
 [tool.hatch.version]
 path = "parakeet_stream/__init__.py"

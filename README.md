@@ -1017,6 +1017,79 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
+## 🛠️ CLI Tools
+
+Parakeet Stream includes production-ready CLI tools for server and client deployment.
+
+### Server CLI
+
+Install and run the transcription server:
+
+```bash
+# Run server directly with uvx (no installation needed)
+uvx --from parakeet-stream parakeet-server run --host 0.0.0.0 --port 8765 --device cuda
+
+# Or install as systemd service for production (requires sudo)
+uvx --from parakeet-stream parakeet-server install
+
+# Check service status
+sudo systemctl status parakeet-server
+sudo journalctl -u parakeet-server -f  # View logs
+```
+
+**Server options:**
+- `--host`: Host to bind to (default: 0.0.0.0)
+- `--port`: Port to listen on (default: 8765)
+- `--device`: Device to use (cpu, cuda, mps)
+- `--config`: Quality preset (low_latency, balanced, high_quality)
+- `--chunk-secs`: Audio chunk size in seconds
+- `--left-context-secs`: Left context window
+- `--right-context-secs`: Right context window
+
+### Client CLI (Hotkey Transcription)
+
+System-wide hotkey transcription that works anywhere:
+
+```bash
+# Run client with uvx (installs dependencies automatically)
+uvx --from 'parakeet-stream[hotkey]' parakeet-client run \
+  --server ws://192.168.1.100:8765 \
+  --auto-paste
+
+# Or install as user systemd service (autostart on login)
+uvx --from 'parakeet-stream[hotkey]' parakeet-client install
+
+# Check service status
+systemctl --user status parakeet-hotkey
+```
+
+**Client features:**
+- Press **Alt+W** to start/stop recording
+- Transcription copied to clipboard automatically
+- Optional auto-paste with smart terminal detection (Ctrl+Shift+V for terminals, Ctrl+V for apps)
+- Transcription shown in system status bar (requires `panelstatus`)
+- Works system-wide in any application
+
+**Client requirements:**
+- Linux with X11 (requires `xdotool` for auto-paste)
+- `pynput`, `panelstatus`, `pyperclip` (installed automatically with `[hotkey]` extras)
+
+### Installation as Tools
+
+For persistent installation:
+
+```bash
+# Install server tool
+uv tool install 'parakeet-stream[server]'
+
+# Install client tool with hotkey dependencies
+uv tool install 'parakeet-stream[hotkey]'
+
+# Now use commands directly
+parakeet-server run --device cuda
+parakeet-client run --server ws://localhost:8765
+```
+
 ## 💬 Support
 
 - **Documentation**: This README and inline code documentation

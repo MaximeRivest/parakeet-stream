@@ -1,0 +1,19 @@
+[Unit]
+Description=Parakeet Transcription Server
+After=network.target
+
+[Service]
+Type=simple
+User=%u
+WorkingDirectory=/home/maxime/Projects/parakeet-stream
+ExecStart=/home/maxime/Projects/parakeet-stream/.venv/bin/python -m parakeet_stream.server 8765 balanced cuda
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits (adjust as needed)
+MemoryMax=8G
+
+[Install]
+WantedBy=multi-user.target

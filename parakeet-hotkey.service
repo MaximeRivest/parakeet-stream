@@ -1,0 +1,16 @@
+[Unit]
+Description=Parakeet Hotkey Transcription Service
+After=network.target sound.target
+
+[Service]
+Type=simple
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=%h/.Xauthority"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus"
+WorkingDirectory=%h/Projects/parakeet-stream
+ExecStart=%h/Projects/parakeet-stream/.venv/bin/python %h/Projects/parakeet-stream/examples/hotkey_transcribe.py --auto-paste
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
