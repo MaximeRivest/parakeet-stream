@@ -237,7 +237,12 @@ class ParakeetServer:
         print()
 
         async def serve():
-            async with websockets.serve(self.handle_client, self.host, self.port):
+            async with websockets.serve(
+                self.handle_client,
+                self.host,
+                self.port,
+                max_size=20 * 1024 * 1024  # 20 MB (allows ~10 minutes of audio per message)
+            ):
                 await asyncio.Future()  # Run forever
 
         try:
@@ -260,7 +265,12 @@ class ParakeetServer:
             >>> await server_instance.wait_closed()
         """
         logger.info(f"Starting Parakeet server on {self.host}:{self.port}")
-        return await websockets.serve(self.handle_client, self.host, self.port)
+        return await websockets.serve(
+            self.handle_client,
+            self.host,
+            self.port,
+            max_size=20 * 1024 * 1024  # 20 MB (allows ~10 minutes of audio per message)
+        )
 
 
 # Convenience function

@@ -85,6 +85,7 @@ class ParakeetClient:
             self.server_url,
             ping_interval=20,
             ping_timeout=10,
+            max_size=20 * 1024 * 1024  # 20 MB to match server
         )
         self.connected = True
 
