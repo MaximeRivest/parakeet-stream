@@ -72,9 +72,15 @@ class HotkeyTranscriber:
             # Start recording
             import sounddevice as sd
             import numpy as np
+            import time
 
             recording = []
             sample_rate = 16000
+            start_time = time.time()
+
+            # Safety limits
+            MAX_DURATION = 9.5 * 60  # 9.5 minutes (safe margin before 10min limit)
+            WARN_DURATION = 8 * 60   # Warn at 8 minutes
 
             def callback(indata, frames, time, status):
                 recording.append(indata.copy())
@@ -87,8 +93,21 @@ class HotkeyTranscriber:
             )
             stream.start()
 
-            # Record until stopped
+            # Record until stopped or max duration reached
             while self.recording:
+                elapsed = time.time() - start_time
+
+                # Auto-stop at max duration
+                if elapsed >= MAX_DURATION:
+                    ps.status.set("⚠️  Max duration reached! Stopping...", color="yellow")
+                    self.recording = False
+                    break
+
+                # Warn when approaching limit
+                if elapsed >= WARN_DURATION and elapsed < WARN_DURATION + 1:
+                    remaining = int(MAX_DURATION - elapsed)
+                    ps.status.set(f"⚠️  {remaining//60}:{remaining%60:02d} left! (Alt+W to stop)", color="yellow")
+
                 await asyncio.sleep(0.1)
 
             # Stop recording
@@ -102,10 +121,32 @@ class HotkeyTranscriber:
 
             audio = np.concatenate(recording, axis=0).flatten().astype(np.float32)
             duration = len(audio) / sample_rate
-            ps.status.set(f"⏳ Transcribing {duration:.1f}s...", color="yellow")
 
-            # Transcribe
-            text = await self.client.transcribe(audio)
+            # For very long recordings, chunk and transcribe progressively
+            CHUNK_DURATION = 8 * 60  # 8 minutes per chunk (safe margin)
+            chunk_size = int(CHUNK_DURATION * sample_rate)
+
+            if len(audio) > chunk_size:
+                ps.status.set(f"⏳ Transcribing {duration:.1f}s in chunks...", color="yellow")
+
+                # Split into chunks and transcribe each
+                text_parts = []
+                num_chunks = (len(audio) + chunk_size - 1) // chunk_size
+
+                for i in range(0, len(audio), chunk_size):
+                    chunk = audio[i:i + chunk_size]
+                    chunk_num = i // chunk_size + 1
+                    ps.status.set(f"⏳ Transcribing chunk {chunk_num}/{num_chunks}...", color="yellow")
+
+                    chunk_text = await self.client.transcribe(chunk)
+                    if chunk_text:
+                        text_parts.append(chunk_text)
+
+                text = " ".join(text_parts)
+            else:
+                ps.status.set(f"⏳ Transcribing {duration:.1f}s...", color="yellow")
+                # Transcribe normally
+                text = await self.client.transcribe(audio)
 
             # Display result
             if text:

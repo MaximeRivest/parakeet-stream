@@ -78,12 +78,18 @@ class PushToTalkClient:
             print(f"🎤 Recording for {duration}s...")
             clip = mic.record(duration=duration)
         else:
-            # Record until Enter
+            # Record until Enter (with safety limit)
             print("🎤 Recording... Press Enter to stop.")
+            print("   (Auto-stops at 9.5 minutes for safety)")
             import sounddevice as sd
+            import threading
+            import time
 
             recording = []
             sample_rate = 16000
+            start_time = time.time()
+            stop_event = threading.Event()
+            max_duration = 9.5 * 60  # 9.5 minutes
 
             def callback(indata, frames, time, status):
                 recording.append(indata.copy())
@@ -96,12 +102,37 @@ class PushToTalkClient:
             )
             stream.start()
 
-            # Wait for Enter
+            # Monitor thread for duration limit
+            def monitor_duration():
+                while not stop_event.is_set():
+                    elapsed = time.time() - start_time
+                    if elapsed >= max_duration:
+                        print(f"\n⚠️  Max duration ({max_duration/60:.1f} min) reached! Auto-stopping...")
+                        stop_event.set()
+                        break
+                    time.sleep(0.5)
+
+            monitor_thread = threading.Thread(target=monitor_duration, daemon=True)
+            monitor_thread.start()
+
+            # Wait for Enter or timeout
             try:
-                input()
+                import select
+                import sys
+                # Use select for timeout on Unix systems
+                if hasattr(select, 'select'):
+                    while not stop_event.is_set():
+                        ready, _, _ = select.select([sys.stdin], [], [], 0.5)
+                        if ready:
+                            sys.stdin.readline()
+                            break
+                else:
+                    # Fallback for Windows
+                    input()
             except KeyboardInterrupt:
                 pass
             finally:
+                stop_event.set()
                 stream.stop()
                 stream.close()
 
