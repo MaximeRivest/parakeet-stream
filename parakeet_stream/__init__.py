@@ -36,7 +36,7 @@ Quick Start:
     ...     print(segment['text'])
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # Core transcription
 from parakeet_stream.parakeet import Parakeet, StreamChunk, TranscriptionResult
